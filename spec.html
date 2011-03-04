@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Testing: CouchWatch...</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon" />
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet/less" type="text/css" href="css/styles.less">
+    <link rel="stylesheet" type="text/css" href="spec/vendor/jasmine.css">
+    <script type="text/javascript" src="js/vendor/LAB.min.js"></script>
+    <script type="text/javascript">
+      $LAB
+      .script("js/vendor/less.js")
+      .script("js/vendor/jquery.js").wait()
+      .script("js/vendor/jquery.couch.js").wait()
+      .script("js/vendor/underscore.js").wait()
+      .script("js/vendor/backbone.js").wait()
+      .script("js/vendor/backbone.couchdb.js").wait(function() {
+
+
+        Backbone.couchConnector.databaseName = "couchwatch-test";
+        Backbone.couchConnector.ddocName = "couchwatch";
+        Backbone.couchConnector.viewName = "byCollection";
+        Backbone.couchConnector.enableChanges = true;
+        Backbone.couchConnector.designDocChange(function(ddocName){
+          console.log("current ddoc: '" + ddocName + "' changed");
+          console.log("restarting...");
+          window.location.reload();
+
+
+        });
+        Backbone.couchConnector.destroyAllData();
+      })
+      .script("js/couchwatch.js")
+      .script("js/client/src/couchwatch.js")
+      .script("spec/vendor/jasmine.js").wait()
+      .script("spec/vendor/jasmine.html.js")
+      .script("spec/vendor/jasmine.jquery.js")
+      .script("spec/vendor/jquery.mockjax.js")
+      .script("spec/spec.helper.js").wait()
+      .script("spec/spec.js").wait(function() {
+
+        var jasmineEnv = jasmine.getEnv(),
+          trivialReporter = new jasmine.TrivialReporter();
+
+        jasmineEnv.updateInterval = 1000;
+        jasmineEnv.addReporter(trivialReporter);
+        jasmineEnv.specFilter = function(spec) {
+          return trivialReporter.specFilter(spec);
+        };
+        jasmineEnv.execute();
+      });
+    </script>
+  </head>
+  <body>
+    <span class="warning">Autorestart Enabled: Make sure that only one testing window is open !!!</span>
+    <div id="content">
+    </div>
+  </body>
+</html>

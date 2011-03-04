@@ -1,0 +1,27 @@
+ ______              _     _                          ______                   _
+(____  \            | |   | |                        / _____)                 | |
+ ____)  ) ____  ____| |  _| | _   ___  ____   ____  | /       ___  _   _  ____| | _
+|  __  ( / _  |/ ___) | / ) || \ / _ \|  _ \ / _  ) | |      / _ \| | | |/ ___) || \
+| |__)  | ( | ( (___| |< (| |_) ) |_| | | | ( (/ / _| \_____| |_| | |_| ( (___| | | |
+|______/ \_||_|\____)_| \_)____/ \___/|_| |_|\____|_)\______)\___/ \____|\____)_| |_|
+
+
+May be freely distributed under the MIT license.
+
+CouchDB connector for Backbone.js, improved version with handling autorestart and better handling
+sync of collection via CouchDB longpoll feed.
+
+To suggest a feature, report a bug, or general discussion:
+
+  - http://github.com/andrzejsliwa/backbone-couch/issues/
+  - http://github.com/andrzejsliwa/backbone-couch/wiki/
+
+Related projects:
+
+  - https://github.com/andrzejsliwa/couch-watch - Real use case of backbone-couch
+
+Installation & first run:
+
+    $ bundle install
+    $ cp .couchapprc.example .couchapprc  # customize .couchpprc here
+    $ soca push test # or ./autopush.watchr
