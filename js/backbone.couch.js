@@ -31,7 +31,11 @@
 (function(){
 
   if (typeof Backbone === 'undefined') {
-    new Error("Missing Backbone.js !!");
+    new Error("Missing / not loaded backbone.js !!");
+  }
+
+  if (typeof $.couch === 'undefined') {
+    new Error("Missing / not loaded jquery.couch.js !!");
   }
 
   Backbone.couch = {
