@@ -1,3 +1,3 @@
 beforeEach(function() {
-  Backbone.couchConnector.destroyAllData();
+  Backbone.couch.destroyAllData();
 });

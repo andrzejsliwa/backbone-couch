@@ -1,7 +1,7 @@
 {
   "env": {
     "test": {
-      "db": "http://localhost:5984/couchwatch-test"
-    },
+      "db": "http://localhost:5984/backbone-couch-test"
+    }
   }
 }

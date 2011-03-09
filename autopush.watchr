@@ -36,10 +36,6 @@ def run(cmd)
   system cmd
 end
 
-# couchapprc = check_file(".couchapprc")
-# couchapprc = JSON.parse(File.read(couchapprc))
-# dbname = couchapprc["env"]["test"]["db"].match(/\d\/(\S*)$/m)[1]
-
 configjs = check_file("config.js")
 configjs = JSON.parse(File.read(configjs))
 appname = configjs["id"]
@@ -48,8 +44,6 @@ if is_growl
   growl = Growl.new("localhost", "ruby-growl", ["CouchApp AutoPush"])
   growl.notify("CouchApp AutoPush", "backbone-couch", "default & test.", 1, true)
 end
-
-push(appname, growl)
 
 watch('.*') do |m|
   unless m[0].match(/\/.idea\//) or m[0].match(/\/.git\//)

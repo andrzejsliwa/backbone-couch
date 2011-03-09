@@ -1,37 +1,31 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Testing: CouchWatch...</title>
+    <title>Testing: Backbone.couch.js ...</title>
     <link rel="icon" href="favicon.ico" type="image/x-icon" />
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
     <link rel="stylesheet/less" type="text/css" href="css/styles.less">
     <link rel="stylesheet" type="text/css" href="spec/vendor/jasmine.css">
-    <script type="text/javascript" src="js/vendor/LAB.min.js"></script>
+    <script type="text/javascript" src="spec/vendor/LAB.min.js"></script>
     <script type="text/javascript">
       $LAB
-      .script("js/vendor/less.js")
       .script("js/vendor/jquery.js").wait()
       .script("js/vendor/jquery.couch.js").wait()
       .script("js/vendor/underscore.js").wait()
       .script("js/vendor/backbone.js").wait()
-      .script("js/vendor/backbone.couchdb.js").wait(function() {
+      .script("js/backbone.couch.js").wait(function() {
 
-
-        Backbone.couchConnector.databaseName = "couchwatch-test";
-        Backbone.couchConnector.ddocName = "couchwatch";
-        Backbone.couchConnector.viewName = "byCollection";
-        Backbone.couchConnector.enableChanges = true;
-        Backbone.couchConnector.designDocChange(function(ddocName){
-          console.log("current ddoc: '" + ddocName + "' changed");
-          console.log("restarting...");
+        Backbone.couch.databaseName = "backbone-couch-test";
+        Backbone.couch.ddocName = "backbone-couch";
+        Backbone.couch.ddocChange(function(ddocName){
+          if (console && console.log) {
+            console.log("current ddoc: '" + ddocName + "' changed");
+            console.log("restarting...");
+          }
           window.location.reload();
-
-
         });
-        Backbone.couchConnector.destroyAllData();
+        Backbone.couch.destroyAllData();
       })
-      .script("js/couchwatch.js")
-      .script("js/client/src/couchwatch.js")
       .script("spec/vendor/jasmine.js").wait()
       .script("spec/vendor/jasmine.html.js")
       .script("spec/vendor/jasmine.jquery.js")
