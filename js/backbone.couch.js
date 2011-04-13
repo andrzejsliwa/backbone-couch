@@ -255,13 +255,16 @@
             _.each( changes.results, function( row ) {
               var doc = row.doc;
               var handlerDefined = typeof that.ddocChangeHandler === "function";
+              var docHandlerDefined = typeof that.docChangeHandler === "function";
               var id = ( doc.id || doc._id );
 
               if ( handlerDefined  && ( id === currentDdoc )) {
                 that.ddocChangeHandler(currentDdoc);
               }
 
-              if ( doc.type ) {
+              if ( docHandlerDefined && ( id != currentDdoc)) {
+                that.docChangeHandler(id);
+              } else if ( doc.type ) {
                 var collection = that._watchList[ doc.type ];
                 if ( collection ) {
                   var model = collection.get( id );
@@ -294,6 +297,16 @@
       this.ddocChangeHandler = callback;
      // run changes feed handler if you have defined ddocChange callback
       if ( this.db() ) { this.runChangesFeed(); }
+    },
+
+    /**
+     * add regular doc change handler
+     *
+     * @param {function} callback
+     */
+    docChange: function( callback ){
+      this.log( "docChange" );
+      this.docChangeHandler = callback;
     },
 
     /**
