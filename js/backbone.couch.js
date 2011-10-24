@@ -185,27 +185,59 @@
         viewName = this.getView( collection ),
         // build query name
         query = this.ddocName + "/" + viewName;
-      // if descending not defined set default false
-      collection.descending || ( collection.descending = false );
 
+      // collections can define their own success/error functions. Success
+      // functions return a list of models to pass to the call back or use
+      // the default function which assumes the value is the model.
       var options = {
-        descending: collection.descending,
-        success: function( result ) {
-          var models = [];
-          // for each result row, build model
-          // compilant with backbone
-          _.each( result.rows, function( row ) {
-            var model = row.value;
-            if ( !model.id ) { model.id = row.id }
-            models.push( model );
+        success: function( result ){
+          _success( collection.success( result ) || function( result ) {
+            var models = [];
+            // for each result row, build model
+            // compilant with backbone
+            _.each( result.rows, function( row ) {
+              var model = row.value;
+              if ( !model.id ) { model.id = row.id }
+              models.push( model );
+            });
+            // if no result then should result null
+            if ( models.length == 0 ) { models = null }
+            return models;
           });
-          // if no result then should result null
-          if ( models.length == 0 ) { models = null }
-          _success( models );
         },
-        error: _error
+        error: collection.error || _error
       };
+
+      // view options with defaults
+      options.descending = collection.descending || false;
+      options.skip = parseInt(collection.skip) || 0;
+      options.group = collection.group || false
+      if(collection.reduce === undefined){
+        options.reduce = true;
+      } else {
+        options.reduce = collection.reduce;
+      }
+      options.include_docs = collection.include_docs || false
+      if(collection.inclusive_end === undefined){
+        options.inclusive_end = true;
+      } else {
+        options.inclusive_end = collection.inclusive_end;
+      }
+      options.update_seq = collection.update_seq || false
+
+      // on/off view options
       if (collection.limit) { options.limit = collection.limit; }
+      if (collection.key) { options.key = collection.key; }
+      if (collection.startkey) { options.startkey = collection.startkey; }
+      if (collection.endkey) { options.endkey = collection.endkey; }
+      if (collection.startkey_docid) { options.startkey_docid = collection.startkey_docid; }
+      if (collection.endkey_docid) { options.endkey_docid = collection.endkey_docid; }
+      if (collection.group_level) { options.group_level = collection.group_level; }
+      // Only two valid values for stale
+      if (_.include(['ok', 'update_after'], collection.stale)) {
+        options.stale = collection.stale;
+      }
+
       db.view(query, options);
 
       var model = new collection.model;
@@ -355,25 +387,23 @@
    *
    * @param {String} method "create" | "update" | "delete" | "read"
    * @param {Object} obj model or collection which should by synch
-   * @param {function} success callback
-   * @param {function} error callback
+   * @param {function} options object containing success and error callbacks
    */
-  Backbone.sync = function(method, obj, success, error) {
-
+  Backbone.sync = function(method, obj, options) {
     if ( method === "create" || method === "update" ) {
       // triggered on "model.save(...)"
-      Backbone.couch.create( obj, success, error );
+      Backbone.couch.create( obj, options.success, options.error );
     } else if ( method === "delete" ) {
       // triggered on "model.destroy(...)"
-      Backbone.couch.remove( obj, success, error );
+      Backbone.couch.remove( obj, options.success, options.error );
     } else if ( method === "read" ) {
       // depends from where sync is called
       if ( obj.model ) {
         // triggered on "collection.fetch(...)"
-        Backbone.couch.fetchCollection( obj, success, error );
+        Backbone.couch.fetchCollection( obj, options.success, options.error );
       } else {
         // triggered on "model.fetch(...)"
-        Backbone.couch.fetchModel( obj, success, error );
+        Backbone.couch.fetchModel( obj, options.success, options.error );
       }
     }
     // run changes feed handler if not run yet
