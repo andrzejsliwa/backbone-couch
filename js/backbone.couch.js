@@ -212,10 +212,11 @@
       options.descending = collection.descending || false;
       options.skip = parseInt(collection.skip) || 0;
       options.group = collection.group || false
-      if(collection.reduce === undefined){
+      // can't use reduce as that's a built in function for collections
+      if(collection.doreduce === undefined){
         options.reduce = true;
       } else {
-        options.reduce = collection.reduce;
+        options.reduce = collection.doreduce;
       }
       options.include_docs = collection.include_docs || false
       if(collection.inclusive_end === undefined){
@@ -342,7 +343,7 @@
     },
 
     /**
-     * remove all date from couchdb database
+     * remove all data from couchdb database
      * except current design document.
      */
     destroyAllData : function() {
