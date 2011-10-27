@@ -191,19 +191,19 @@
       // the default function which assumes the value is the model.
       var options = {
         success: function( result ){
-          _success( collection.success( result ) || function( result ) {
+          _success( (collection.success || function( result ) {
             var models = [];
             // for each result row, build model
-            // compilant with backbone
+            // compliant with backbone
             _.each( result.rows, function( row ) {
               var model = row.value;
-              if ( !model.id ) { model.id = row.id }
+              if ( !model.id ) { model.id = row.id; }
               models.push( model );
             });
             // if no result then should result null
             if ( models.length == 0 ) { models = null }
             return models;
-          });
+          })( result ));
         },
         error: collection.error || _error
       };
