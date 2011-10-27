@@ -201,7 +201,7 @@
               models.push( model );
             });
             // if no result then should result null
-            if ( models.length == 0 ) { models = null }
+            if ( models.length == 0 ) { models = null; }
             return models;
           })( result ));
         },
@@ -211,20 +211,20 @@
       // view options with defaults
       options.descending = collection.descending || false;
       options.skip = parseInt(collection.skip) || 0;
-      options.group = collection.group || false
-      // can't use reduce as that's a built in function for collections
-      if(collection.doreduce === undefined){
-        options.reduce = true;
-      } else {
-        options.reduce = collection.doreduce;
-      }
-      options.include_docs = collection.include_docs || false
+
+      // the collection couchbdb parameter is named doreduce, as opposed to simply reduce, since reduce is reserved by backbone.
+      options.reduce = collection.doreduce == undefined ? true : collection.doreduce;
+
+      // don't define options.group without unless options.reduce is true (since couchdb 1.1.0 blows up on non-reduce views when passing group=false)
+      if(options.reduce) options.group = collection.group || false;
+
+      options.include_docs = collection.include_docs || false;
       if(collection.inclusive_end === undefined){
         options.inclusive_end = true;
       } else {
         options.inclusive_end = collection.inclusive_end;
       }
-      options.update_seq = collection.update_seq || false
+      options.update_seq = collection.update_seq || false;
 
       // on/off view options
       if (collection.limit) { options.limit = collection.limit; }
