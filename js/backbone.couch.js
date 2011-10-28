@@ -124,7 +124,10 @@
      * @type String
      */
     getType: function( model ) {
-      return model.url;
+      // previously, backbone.couch hijacked the url property to specify
+      // type. It's probably better to just call the attribute 'type' and
+      // not bother with url
+      return model.type || model.url;
     },
 
     /**
@@ -136,13 +139,18 @@
      * @type String
      */
     getView: function( collection ) {
+      if (! collection) throw new Error( "no collection passed to getView" );
+      // previously, backbone.couch hijacked the url property to specify
+      // the view. It's probably better to just call the attribute 'view' and
+      // not bother with url.
+      var view = collection.view || collection.url;
       this.log( "getViewName" );
 
-      if (!( collection && collection.url )) {
+      if (! view ) {
         throw new Error( "No url property / function!" );
       }
       // if url is function evaluate else use as value
-      return _.isFunction( collection.url ) ? collection.url() : collection.url;
+      return _.isFunction( view ) ? view() : view;
     },
 
     /**
