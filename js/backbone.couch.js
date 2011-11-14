@@ -131,7 +131,7 @@
     },
 
     /**
-     * return view name from collection url property
+     * return view name from collection view or url property
      *
      * @param {Backbone.Model} collection
      *
@@ -144,13 +144,30 @@
       // the view. It's probably better to just call the attribute 'view' and
       // not bother with url.
       var view = collection.view || collection.url;
-      this.log( "getViewName" );
+      this.log( "getView" );
 
       if (! view ) {
         throw new Error( "No url property / function!" );
       }
       // if url is function evaluate else use as value
       return _.isFunction( view ) ? view() : view;
+    },
+
+    /**
+     * return list name from collection list property
+     *
+     * @param {Backbone.Model} collection
+     *
+     * @return name of list
+     * @type String
+     */
+    getList: function( collection ) {
+      if (! collection) throw new Error( "no collection passed to getList" );
+      var list = collection.list;
+      this.log( "getList" );
+
+      // if url is function evaluate else use as value
+      return _.isFunction( list ) ? list() : list;
     },
 
     /**
@@ -189,10 +206,10 @@
       this.log( "fetchCollection" );
 
       var db = this.db(),
-        // retrive view name from 'url' of collection
         viewName = this.getView( collection ),
+        listName = this.getList( collection ),
         // build query name
-        query = this.ddocName + "/" + viewName;
+        query = this.ddocName + "/" + (listName || viewName);
 
       // collections can define their own success/error functions. Success
       // functions return a list of models to pass to the call back or use
@@ -247,7 +264,8 @@
         options.stale = collection.stale;
       }
 
-      db.view(query, options);
+      if(listName) db.list(query, viewName, options, {success: options.success, error: options.error});
+      else         db.view(query, options);
 
       var model = new collection.model;
       if (! model.url ) {
