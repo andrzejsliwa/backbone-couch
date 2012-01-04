@@ -39,6 +39,7 @@
   }
 
   Backbone.couch = {
+    VERSION: "0.0.1",
 
     // turn on/off logger
     debug: false,
