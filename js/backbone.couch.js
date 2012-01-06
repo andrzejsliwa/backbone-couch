@@ -326,18 +326,34 @@
 
               if ( docHandlerDefined && ( id != currentDdoc)) {
                 that.docChangeHandler(id);
-              } else if ( doc.type ) {
-                var collection = that._watchList[ doc.type ];
-                if ( collection ) {
+              } else {
+                var add_or_update = function( collection, doc, id ) {
                   var model = collection.get( id );
                   if ( model ) {
                     if ( model && doc._rev != model.get( "_rev" ) ) {
                       model.set(doc);
                     }
                   } else {
-                    if ( !doc.id ) { doc.id = doc._id; }
+                    if ( !doc.id ) { doc.id = id; }
                     collection.add(doc);
                   }
+                };
+                if ( doc.type ) {
+                  var collection = that._watchList[ doc.type ];
+                  add_or_update( collection, doc, id );
+                } else {
+                  // No type field, so iterate through all collections
+                  _.each( that._watchList, function( collection ) {
+                    // Only add or update if the model duck-types to the
+                    // collection
+                    var model = new collection.model();
+                    var attributes = model.toJSON();
+                    if ( _.all( attributes, function( value, key ) {
+                      return key in doc;
+                    })) {
+                      add_or_update( collection, doc, id );
+                    }
+                  });
                 }
               }
             })
