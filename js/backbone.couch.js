@@ -343,6 +343,7 @@
         },
         error: function () {
           that.log("problem with db connection");
+          Backbone.couch.startingChanges = false;
         }
       })
     },
@@ -403,7 +404,9 @@
      */
     runChangesFeed: function() {
       // run changes changes feed handler
-      if( Backbone.couch.enableChangesFeed && !Backbone.couch.changesFeed ) {
+      if( Backbone.couch.enableChangesFeed && !Backbone.couch.changesFeed
+          && !Backbone.couch.startingChanges ) {
+        Backbone.couch.startingChanges = true;
         Backbone.couch._changes();
       }
     }
