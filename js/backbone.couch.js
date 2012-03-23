@@ -130,7 +130,7 @@
       // Otherwise use the collection url
       if ( !type ) {
         this.log("Could not determine type of model, falling back to collection");
-        type = collection.url;
+        type = collection.view || collection.url;
         if ( !type ) {
           throw new Error( "Could not determine type of model or collection" );
         }
