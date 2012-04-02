@@ -340,7 +340,11 @@
                 };
                 if ( doc.type ) {
                   var collection = that._watchList[ doc.type ];
-                  add_or_update( collection, doc, id );
+                  if ( typeof collection.docChangeHandler === "function" ) {
+                    collection.docChangeHandler( collection, doc, id );
+                  } else {
+                    add_or_update( collection, doc, id );
+                  }
                 } else {
                   // No type field, so iterate through all collections
                   _.each( that._watchList, function( collection ) {
@@ -351,7 +355,11 @@
                     if ( _.all( attributes, function( value, key ) {
                       return key in doc;
                     })) {
-                      add_or_update( collection, doc, id );
+                      if ( typeof collection.docChangeHandler === "function" ) {
+                        collection.docChangeHandler( collection, doc, id );
+                      } else {
+                        add_or_update( collection, doc, id );
+                      }
                     }
                   });
                 }
