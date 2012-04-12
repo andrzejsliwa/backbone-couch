@@ -39,6 +39,7 @@
   }
 
   Backbone.couch = {
+    VERSION: "0.0.1",
 
     // turn on/off logger
     debug: false,
@@ -101,7 +102,7 @@
 
       var db = this.db(),
         data = model.toJSON();
-      if ( !data.type ) { data.type = this.getType( model ); }
+      if ( !data.type && model.type ) { data.type = model.type; }
       if ( !data.id && data._id ) { data.id = data._id; }
       db.saveDoc( data, {
         success: function( respone ){
@@ -116,19 +117,29 @@
     },
 
     /**
-     * return type stored in model url property
+     * return type of a given collection
      *
-     * @param {Backbone.Model} model
+     * @param {Backbone.Collection} collection
      *
-     * @return type of model
+     * @return type of collection
      * @type String
      */
-    getType: function( model ) {
-      return model.url;
+    getType: function( collection ) {
+      // Use the default model type if available
+      var type = new collection.model().type;
+      // Otherwise use the collection url
+      if ( !type ) {
+        this.log("Could not determine type of model, falling back to collection");
+        type = collection.view || collection.url;
+        if ( !type ) {
+          throw new Error( "Could not determine type of model or collection" );
+        }
+      }
+      return type;
     },
 
     /**
-     * return view name from collection url property
+     * return view name from collection view or url property
      *
      * @param {Backbone.Model} collection
      *
@@ -136,13 +147,35 @@
      * @type String
      */
     getView: function( collection ) {
-      this.log( "getViewName" );
+      if (! collection) throw new Error( "no collection passed to getView" );
+      // previously, backbone.couch hijacked the url property to specify
+      // the view. It's probably better to just call the attribute 'view' and
+      // not bother with url.
+      var view = collection.view || collection.url;
+      this.log( "getView" );
 
-      if (!( collection && collection.url )) {
+      if (! view ) {
         throw new Error( "No url property / function!" );
       }
       // if url is function evaluate else use as value
-      return _.isFunction( collection.url ) ? collection.url() : collection.url;
+      return _.isFunction( view ) ? view() : view;
+    },
+
+    /**
+     * return list name from collection list property
+     *
+     * @param {Backbone.Model} collection
+     *
+     * @return name of list
+     * @type String
+     */
+    getList: function( collection ) {
+      if (! collection) throw new Error( "no collection passed to getList" );
+      var list = collection.list;
+      this.log( "getList" );
+
+      // if url is function evaluate else use as value
+      return _.isFunction( list ) ? list() : list;
     },
 
     /**
@@ -181,29 +214,29 @@
       this.log( "fetchCollection" );
 
       var db = this.db(),
-        // retrive view name from 'url' of collection
         viewName = this.getView( collection ),
+        listName = this.getList( collection ),
         // build query name
-        query = this.ddocName + "/" + viewName;
+        query = this.ddocName + "/" + (listName || viewName);
 
       // collections can define their own success/error functions. Success
       // functions return a list of models to pass to the call back or use
       // the default function which assumes the value is the model.
       var options = {
         success: function( result ){
-          _success( collection.success( result ) || function( result ) {
+          _success( (collection.success || function( result ) {
             var models = [];
             // for each result row, build model
-            // compilant with backbone
+            // compliant with backbone
             _.each( result.rows, function( row ) {
               var model = row.value;
-              if ( !model.id ) { model.id = row.id }
+              if ( !model.id ) { model.id = row.id; }
               models.push( model );
             });
             // if no result then should result null
-            if ( models.length == 0 ) { models = null }
+            if ( models.length == 0 ) { models = null; }
             return models;
-          });
+          })( result ));
         },
         error: collection.error || _error
       };
@@ -211,20 +244,20 @@
       // view options with defaults
       options.descending = collection.descending || false;
       options.skip = parseInt(collection.skip) || 0;
-      options.group = collection.group || false
-      // can't use reduce as that's a built in function for collections
-      if(collection.doreduce === undefined){
-        options.reduce = true;
-      } else {
-        options.reduce = collection.doreduce;
-      }
-      options.include_docs = collection.include_docs || false
+
+      // the collection couchbdb parameter is named doreduce, as opposed to simply reduce, since reduce is reserved by backbone.
+      options.reduce = collection.doreduce == undefined ? true : collection.doreduce;
+
+      // don't define options.group without unless options.reduce is true (since couchdb 1.1.0 blows up on non-reduce views when passing group=false)
+      if(options.reduce) options.group = collection.group || false;
+
+      options.include_docs = collection.include_docs || false;
       if(collection.inclusive_end === undefined){
         options.inclusive_end = true;
       } else {
         options.inclusive_end = collection.inclusive_end;
       }
-      options.update_seq = collection.update_seq || false
+      options.update_seq = collection.update_seq || false;
 
       // on/off view options
       if (collection.limit) { options.limit = collection.limit; }
@@ -239,14 +272,10 @@
         options.stale = collection.stale;
       }
 
-      db.view(query, options);
+      if(listName) db.list(query, viewName, options, {success: options.success, error: options.error});
+      else         db.view(query, options);
 
-      var model = new collection.model;
-      if (! model.url ) {
-        throw new Error( "No 'url' property on collection.model!" );
-      }
-
-      var type = this.getType(new collection.model);
+      var type = this.getType( collection );
       if ( !this._watchList[ type ] ) {
         this._watchList[ type ] = collection;
       }
@@ -297,18 +326,42 @@
 
               if ( docHandlerDefined && ( id != currentDdoc)) {
                 that.docChangeHandler(id);
-              } else if ( doc.type ) {
-                var collection = that._watchList[ doc.type ];
-                if ( collection ) {
+              } else {
+                var add_or_update = function( collection, doc, id ) {
                   var model = collection.get( id );
                   if ( model ) {
                     if ( model && doc._rev != model.get( "_rev" ) ) {
                       model.set(doc);
                     }
                   } else {
-                    if ( !doc.id ) { doc.id = doc._id; }
+                    if ( !doc.id ) { doc.id = id; }
                     collection.add(doc);
                   }
+                };
+                if ( doc.type ) {
+                  var collection = that._watchList[ doc.type ];
+                  if ( typeof collection.docChangeHandler === "function" ) {
+                    collection.docChangeHandler( collection, doc, id );
+                  } else {
+                    add_or_update( collection, doc, id );
+                  }
+                } else {
+                  // No type field, so iterate through all collections
+                  _.each( that._watchList, function( collection ) {
+                    // Only add or update if the model duck-types to the
+                    // collection
+                    var model = new collection.model();
+                    var attributes = model.toJSON();
+                    if ( _.all( attributes, function( value, key ) {
+                      return key in doc;
+                    })) {
+                      if ( typeof collection.docChangeHandler === "function" ) {
+                        collection.docChangeHandler( collection, doc, id );
+                      } else {
+                        add_or_update( collection, doc, id );
+                      }
+                    }
+                  });
                 }
               }
             })
@@ -316,6 +369,7 @@
         },
         error: function () {
           that.log("problem with db connection");
+          Backbone.couch.startingChanges = false;
         }
       })
     },
@@ -376,7 +430,9 @@
      */
     runChangesFeed: function() {
       // run changes changes feed handler
-      if( Backbone.couch.enableChangesFeed && !Backbone.couch.changesFeed ) {
+      if( Backbone.couch.enableChangesFeed && !Backbone.couch.changesFeed
+          && !Backbone.couch.startingChanges ) {
+        Backbone.couch.startingChanges = true;
         Backbone.couch._changes();
       }
     }
