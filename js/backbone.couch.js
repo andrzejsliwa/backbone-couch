@@ -246,7 +246,7 @@
       options.skip = parseInt(collection.skip) || 0;
 
       // the collection couchbdb parameter is named doreduce, as opposed to simply reduce, since reduce is reserved by backbone.
-      options.reduce = collection.doreduce == undefined ? true : collection.doreduce;
+      options.reduce = collection.doreduce == undefined ? false : collection.doreduce;
 
       // don't define options.group without unless options.reduce is true (since couchdb 1.1.0 blows up on non-reduce views when passing group=false)
       if(options.reduce) options.group = collection.group || false;
